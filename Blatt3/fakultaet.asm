@@ -16,29 +16,35 @@ main:
   syscall
   move    $s0, $v0       # move value N into $s0 register
 
-  ## Begin user programmed code
+  ########
+  ## Begin user  code
+  ########
 
-  li		$t2, 0		# $t3 = 1
-  li		$t3, 12		# $t4 = 12
+  # Load upper and lower bounds into registers
+  li		$t1, 0		        # Lower bound
+  li		$t2, 12		        # Upper bound
   
   # Clamp input to [0..12]
-  blt		$s0, $t2, error	  # if $t0 < $t1 then target
-  bgt		$s0, $t3, error	  # if $s0 > $t4 then error
+  blt		$s0, $t1, error	  # Lower bound
+  bgt		$s0, $t2, error	  # Upper bound
 
-  move 	$t1, $s0		      # Counter var
-  li		$s1, 1		        # $s1 = 1
+  # Load counter variable and initial result
+  move 	$t0, $s0		      # Counter variable
+  li		$s1, 1		        # Initial result (:= 1)
 
 loop: # Calculate n!
-  ble		$t1, $t2, end	    # if $t1 <= $t3 then end
-  mult	$s1, $t1			    # $s1 * $t1 = Lo registers
-  mflo	$s1					      # copy Lo to $s1
-  sub		$t1, $t1, 1		    # $t1 = $t1 - 1
-  j		loop				        # jump to loop
+  ble		$t0, $t1, end	    # End check (<= 0)
+  mult	$s1, $t0			    
+  mflo	$s1
+  sub		$t0, $t0, 1		    # Decrement counter
+  j		loop				        # jump to loop start
      
 error:
-  li		$s1, -1		# $s1 = -1
-
-end: ## End user programmed code
+  li		$s1, -1		        # Error result (:= -1)
+end:
+########
+## End user programmed code
+########
 
   li      $v0, 4         # system call no. 4: print asciiz
   la      $a0, end1      # load address of end1
