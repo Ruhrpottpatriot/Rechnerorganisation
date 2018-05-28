@@ -1,0 +1,11 @@
+Aufgabe 1
+Da MIPS die von Neumann Architektur verwendet sind Daten und Programmcode im selben Speicher abgelegt.
+In MIPS werden Daten von Programmcode durch unterschiedliche Segmente (.data und.text) getrennt.
+Im .text segment liegt nur Programmcode, der rest liegt im .data Segment (z.B. globale Variable, output strings, etc.)
+
+Aufgabe 2
+1. "addi" ist eine Addition mit overflow, "addiu" ist eine Addition ohne overflow. Dies kann dazu benutzt werden
+um eine "subtract immediate" operation darzustellen, da sowohl "addi" als auch "addiu" sign extended anstatt zero extended sind.
+
+2. Wie oben geschrieben wird bei "addi" auf einen Überlauf getestet. Addition auf eine Speicheradresse die über den Zahlenbereich
+hinausgehen würde, wird somit entdeckt. Bei "addiu" würde aufgrund des Zweierkomplements die Speicheradresse ins negative gekehrt.
