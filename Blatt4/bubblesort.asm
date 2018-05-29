@@ -1,28 +1,29 @@
-# Hauptprogramm
 	.text
     .globl main
 main:
     addi  $sp,  $sp, -4      # save stack space for registers
     sw    $ra,  0($sp)       # save return address
     jal   readValues         # from console
-    #jal   sortValues
+    jal   sortValues
     jal   printValues        # to screen
+
+    # Free array stack space
+    li		$t0, 4		    # Word size
+    mul     $t0, $t0, $s0   # Total space for n elements
+    add	$sp, $sp, $t0	# $sp = $t0 + $sp
+    
     lw    $ra,  0($sp)       # restore return address
     addi  $sp,  $sp, 4       # restore stack pointer
     jr    $ra
 
-readValues: 
-    addiu   $sp,  $sp, -8      # reserve stack space for 2 register
-	sw      $fp, 4($sp)	
-    sw      $ra,  0($sp)   
-
+readValues:
     li		$v0, 4		# system call #4 - print string
     la		$a0, elemNum
     syscall				# execute
 
     li		$v0, 5		# $v0 = 5
     syscall
-    move 	$s0, $v0		# $0 = $v0
+    move 	$s0, $v0		# $s0 = $v0
 
     # Check if in range
     blez    $s0, inputError
@@ -30,10 +31,10 @@ readValues:
     bge		$s0, $t0, inputError
 
     # Allocate array space on stack and save start of array in $s1
-    li	    $t0, 4
-    mul     $t0,  $s0, $t0
-    subu    $sp, $sp, $t0
-    move    $s1, $sp
+    li		$t0, 4		    # Word size
+    mul     $t0, $t0, $s0  # Total space for n elements
+    subu    $sp, $sp, $t0   # Move $sp down array size
+    move    $s1, $sp        # Store array start in $s1
 
     # Read values into array
     li		$v0, 4		# system call #4 - print string
@@ -51,7 +52,7 @@ inputLoop:
     # Read int and store in array
     li    $v0, 5
     syscall
-    #sw		$v0, 0($t1)
+    sw		$v0, 0($t1)
 
     # i++ and jump to start
     addi	$t0, $t0, 1	    # $t0 = $tp -1
@@ -65,92 +66,159 @@ inputError:
 endInput:
     li		$v0, 4		# system call #4 - print string
     la		$a0, finish
-    syscall   
-
-    # move stack pointer upwards n times
-    li		$t0, 4		# $t0 = 4
-    mul     $t0,  $s0, $t0
-    add		$sp, $sp, $t0		# $sp = $sp + $t0
+    syscall
     
-    # Restore registers
-    lw	    $fp,  4($s1)		#     
-    lw      $ra,  0($sp)       # restore return address
-    addi    $sp,  $sp, 8       # restore stack pointer
     jr   	$ra    
 
 
 sortValues:
-    addi    $sp,  $sp, -8   # save stack space for 2 registers
-    sw		$fp, 4($sp)		# Save frame pointer
-    sw      $ra,  0($sp)    # save return address
+    li		$v0, 4		# system call #4 - print string 
+    la		$a0, sortStart
+    syscall				# execute
 
-    li		$t0, 0		# $t0 = 0
-sortLoopOuter:
-    bge		$t0, $s0, endSortOuter	# if $t0 >= $s0 then endSortOuter
+    # Outer loop
+    # for (n= A.size; n>1; n=n-1)
+    li		$t0, 1		        # $t0 = 1
+    move 	$t1, $s0		    # $t1 = $s0    
+outer:
+    bge		$t0, $t1, endOuter	# if $t0 >= $t1 then endOuter
+
+    # Print sort index
+    li		$v0, 4
+    la		$a0, sortIndex
+    syscall
+    li		$v0, 1		# system call #1 - print int
+    move 	$a0, $t1		# $a0 = $t1
+    syscall				# execute
+    li		$v0, 4		# system call #4 - print string 
+    la		$a0, nline
+    syscall				# execute
+
+    # Inner Loop
+    # for (i=0; i<n-1; i=i+1)
+    li		$t2, 0		        #  i = 0
+    addi	$t3, $t1, -1		#  n -  1
+inner:
+    bge		$t2, $t3, endInner	# if $t3 >= $t2 then endInner
+
+    # Print inner index
+    li		$v0, 4
+    la		$a0, innerIndex
+    syscall
+    li		$v0, 1
+    move    $a0, $t2
+    syscall
+    li		$v0, 4
+    la		$a0, nline
+    syscall
+
+    # Get A[i] and A[i]
+    sll     $t4, $t2, 2
+    add		$t4, $t4, $s1
+    lw		$t5, 0($t4)
+
+    addi	$t6, $t2, 1
+    sll     $t6, $t6, 2
+    add		$t6, $t6, $s1
+    lw		$t7, 0($t6)
+
+    # Print comparison tuple
+    li		$v0, 4		# system call #4 - print string
+    la		$a0, compareTuple
+    syscall				# execute
+    li    $a0,  28           # set $a0 = ',' (ASCII char)
+    li    $v0,  11           # set $v0 = index of system call "print_char"
+    syscall                  # print on console: ','
+    li		$v0, 1		# system call #1 - print int
+    move 	$a0, $t5		# $a0 = $t5
+    syscall				# execute
+    li    $a0,  44           # set $a0 = ',' (ASCII char)
+    li    $v0,  11           # set $v0 = index of system call "print_char"
+    syscall                  # print on console: ','
+    li		$v0, 1		# system call #1 - print int
+    move 	$a0, $t7		# $a0 = $t7
+    syscall				# execute
+    li    $a0,  29           # set $a0 = ',' (ASCII char)
+    li    $v0,  11           # set $v0 = index of system call "print_char"
+    syscall                  # print on console: ','
+    li		$v0, 4		# system call #4 - print string 
+    la		$a0, nline
+    syscall				# execute
+
+
     
-    li		$t1, 0		# $t1 = 0
-sortLoopInner:
-    bge		$t1, $s0, endSortInner	# if $t1 >= $s0 then endSortInner
+    # Compare and swap
+    # if (A[i] <= A[i+1])
+    #   continue;
+    ble		$t5, $t7, lessOrEq
+    sw		$t5, 0($t6)		    # Store i at i+1 
+    sw		$t7, 0($t4)		    # Store i+1 at is
+lessOrEq:
 
+    addi	$t2, $t2, 1			# $t3 = $t3 + 1
+    j       inner
+endInner:
+    addi   $t1,$t1, -1
+    j		outer				# jump to outer
+endOuter:
 
-    # Get elem i and i+1
-    # compare them
-    # if i > i+1 swap
+    li		$v0, 4		# system call #4 - print string 
+    la		$a0, sortEnd
+    syscall				# execute
 
-
-    addi	$t1, $t1, 1			# $t1 = $t1 + 1
-    j sortLoopInner
-
-endSortInner:
-    addi	$t0, $t0, 1			# $t0 = $t0 + 1
-    j		sortLoopOuter				# jump to target
-    
-
-endSortOuter:
-
-    lw      $fp 4($sp)      # restore frame pointer
-    lw      $ra,  0($sp)    # restore return address
-    addi    $sp,  $sp, 8    # restore stack pointer
     jr      $ra
 
 
 printValues:
-    addi    $sp,  $sp, -8   # save stack space for 2 registers
-    sw		$fp, 4($sp)		# Save frame pointer
-    sw      $ra,  0($sp)    # save return address
-
     li		$v0, 4		# system call #4 - print string
     la		$a0, printElems
     syscall
 
-    li		$v0, 1		    # $v0 = 1
-    move 	$a0, $s0		# $a0 = $s0
-    syscall   
+    # li		$v0, 1		    # $v0 = 1
+    # move 	$a0, $s0		# $a0 = $s0
+    # syscall   
 
     li		$t0, 0		    # $t0 = 0
-printLoop:
-    bge		$t0, $s0, printEnd	# Break condition (i >= n)
-    
-    # Calculdate addresses
+
+    # Print first element of array
+    # Calculdate element address
     sll     $t1, $t0, 2
     add		$t1, $t1, $s1
 
-    # Print value
+    # Print element
     li		$v0, 1		# system call #1 - print int
-    la		$a0, 0($t1)
+    lw		$a0, 0($t1)
+    syscall 
+    addi	$t0, $t0, 1			# $t0 = $t0 + 1
+
+printLoop:
+    bge		$t0, $s0, printEnd	# Break condition (i >= n)
+    
+    # Print delimiter
+    li    $a0,  44           # set $a0 = ',' (ASCII char)
+    li    $v0,  11           # set $v0 = index of system call "print_char"
+    syscall                  # print on console: ','
+
+    # Calculdate element address
+    sll     $t1, $t0, 2
+    add		$t1, $t1, $s1
+
+    # Print element
+    li		$v0, 1		# system call #1 - print int
+    lw		$a0, 0($t1)
     syscall
 
+    # Increment and jump to start
     addi	$t0, $t0, 1		# $t0 = $t0 + 1
     j		printLoop		# jump to loop
 
-printEnd:   
-    lw      $fp 4($sp)      # restore frame pointer
-    lw      $ra,  0($sp)    # restore return address
-    addi    $sp,  $sp, 8    # restore stack pointer
+printEnd:
     jr      $ra
 
 
 
+
+# Not used, only for reference
 swapElements:
     # Array start address save in $a0
     # Index saved in $a1
@@ -184,4 +252,9 @@ elemIn: .asciiz "Geben sie die Elemente ein:\n"
 inErr: .asciiz "Nur Nummern zwischen 1 und 10 akzeptiert\n"
 finish: .asciiz "Finished reading elements into array.\n"
 printElems: .asciiz "Gebe sortiertes array aus:\n"
+sortStart: .asciiz "Starte Sortierung\n"
+sortEnd: .asciiz "Sortierung beendet\n"
+sortIndex: .asciiz "Durchgang: "
+innerIndex: .asciiz "Element: "
+compareTuple: .asciiz "Vergleichstupel: "
 nline: .asciiz "\n"
