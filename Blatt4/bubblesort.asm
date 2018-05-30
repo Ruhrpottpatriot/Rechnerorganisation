@@ -1,9 +1,11 @@
 	.text
     .globl main
 main:
-    addi  $sp,  $sp, -4      # save stack space for registers
-    sw    $ra,  0($sp)       # save return address
-    jal   readValues         # from console
+    addi    $sp,  $sp, -4      # save stack space for registers
+    sw      $ra,  0($sp)       # save return address
+    jal     readValues         # from console
+    beq	    $v0, $zero, end
+
     jal   sortValues
     jal   printValues        # to screen
 
@@ -11,7 +13,7 @@ main:
     li		$t0, 4		    # Word size
     mul     $t0, $t0, $s0   # Total space for n elements
     add	$sp, $sp, $t0	# $sp = $t0 + $sp
-    
+end:
     lw    $ra,  0($sp)       # restore return address
     addi  $sp,  $sp, 4       # restore stack pointer
     jr    $ra
@@ -62,12 +64,16 @@ inputError:
     li		$v0, 4		# system call #4 - print string
     la		$a0, inErr
     syscall				# execute
+    move    $v0, $zero
+    j		return				# jump to return
+    
 
 endInput:
     li		$v0, 4		# system call #4 - print string
     la		$a0, finish
     syscall
-    
+    li		$v0, 1		# $v0 = 1
+return:
     jr   	$ra    
 
 
