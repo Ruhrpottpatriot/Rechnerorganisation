@@ -112,7 +112,7 @@ inner:
     la		$a0, nline
     syscall
 
-    # Get A[i] and A[i]
+    # Get A[i] and A[i+1]
     sll     $t4, $t2, 2
     add		$t4, $t4, $s1
     lw		$t5, 0($t4)
@@ -144,8 +144,6 @@ inner:
     li		$v0, 4		# system call #4 - print string 
     la		$a0, nline
     syscall				# execute
-
-
     
     # Compare and swap
     # if (A[i] <= A[i+1])
@@ -172,11 +170,7 @@ endOuter:
 printValues:
     li		$v0, 4		# system call #4 - print string
     la		$a0, printElems
-    syscall
-
-    # li		$v0, 1		    # $v0 = 1
-    # move 	$a0, $s0		# $a0 = $s0
-    # syscall   
+    syscall 
 
     li		$t0, 0		    # $t0 = 0
 
